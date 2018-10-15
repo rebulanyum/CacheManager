@@ -11,7 +11,7 @@ namespace CacheManager.Tests
     {
         [Fact]
         [Trait("category", "Unreliable")]
-        public void CacheItem_WithAbsoluteExpiration()
+        public void CacheItemValidation_WithAbsoluteExpiration()
         {
             // arrange
             var baseItem = new CacheItem<object>("key", "region", "value", ExpirationMode.Sliding, TimeSpan.FromDays(10));
@@ -25,12 +25,14 @@ namespace CacheManager.Tests
             result.Value.Should().Be(baseItem.Value);
             result.Region.Should().Be(baseItem.Region);
             result.Key.Should().Be(baseItem.Key);
-            result.CreatedUtc.Should().Be(baseItem.CreatedUtc);
+            result.CreatedUtc.Kind.Should().Be(baseItem.CreatedUtc.Kind);
+            result.CreatedUtc.Kind.Should().Be(DateTimeKind.Utc);
+            result.CreatedUtc.Should().BeCloseTo(baseItem.CreatedUtc);
             result.LastAccessedUtc.Should().Be(baseItem.LastAccessedUtc);
         }
 
         [Fact]
-        public void CacheItem_WithAbsoluteExpiration_Invalid()
+        public void CacheItemValidation_WithAbsoluteExpiration_Invalid()
         {
             // arrange
             var baseItem = new CacheItem<object>("key", "region", "value", ExpirationMode.Sliding, TimeSpan.FromDays(10));
@@ -39,11 +41,11 @@ namespace CacheManager.Tests
             Action act = () => baseItem.WithAbsoluteExpiration(DateTimeOffset.Now.AddMinutes(-10));
 
             // assert
-            act.ShouldThrow<ArgumentException>().WithMessage("*value must be greater*");
+            act.Should().Throw<ArgumentException>().WithMessage("*value must be greater*");
         }
 
         [Fact]
-        public void CacheItem_WithAbsoluteExpiration_InvalidB()
+        public void CacheItemValidation_WithAbsoluteExpiration_InvalidB()
         {
             // arrange
             var baseItem = new CacheItem<object>("key", "region", "value", ExpirationMode.Sliding, TimeSpan.FromDays(10));
@@ -52,12 +54,11 @@ namespace CacheManager.Tests
             Action act = () => baseItem.WithAbsoluteExpiration(TimeSpan.FromMilliseconds(-10));
 
             // assert
-            act.ShouldThrow<ArgumentException>().WithMessage("*value must be greater*");
+            act.Should().Throw<ArgumentException>().WithMessage("*value must be greater*");
         }
 
-
         [Fact]
-        public void CacheItem_WithSlidingExpiration_Invalid()
+        public void CacheItemValidation_WithSlidingExpiration_Invalid()
         {
             // arrange
             var baseItem = new CacheItem<object>("key", "region", "value", ExpirationMode.Sliding, TimeSpan.FromDays(10));
@@ -66,22 +67,22 @@ namespace CacheManager.Tests
             Action act = () => baseItem.WithSlidingExpiration(TimeSpan.FromDays(-1));
 
             // assert
-            act.ShouldThrow<ArgumentException>().WithMessage("*value must be greater*");
+            act.Should().Throw<ArgumentException>().WithMessage("*value must be greater*");
         }
 
         [Fact]
-        public void CacheItem_WithExpiration_Invalid()
+        public void CacheItemValidation_WithExpiration_Invalid()
         {
             // arrange
             // act
             Action act = () => new CacheItem<object>("key", "region", "value", ExpirationMode.Sliding, TimeSpan.FromTicks(long.MaxValue));
 
             // assert
-            act.ShouldThrow<ArgumentOutOfRangeException>().WithMessage("*365*");
+            act.Should().Throw<ArgumentOutOfRangeException>().WithMessage("*365*");
         }
 
         [Fact]
-        public void CacheItem_WithCreated()
+        public void CacheItemValidation_WithCreated()
         {
             // arrange
             var baseItem = new CacheItem<object>("key", "region", "value", ExpirationMode.Sliding, TimeSpan.FromDays(10));
@@ -91,17 +92,17 @@ namespace CacheManager.Tests
             var result = baseItem.WithCreated(created);
 
             // assert
-            result.CreatedUtc.Should().Be(created);
+            result.CreatedUtc.Should().BeCloseTo(created);
             result.Value.Should().Be(baseItem.Value);
             result.Region.Should().Be(baseItem.Region);
             result.Key.Should().Be(baseItem.Key);
-            result.LastAccessedUtc.Should().Be(baseItem.LastAccessedUtc);
+            result.LastAccessedUtc.Should().BeCloseTo(baseItem.LastAccessedUtc);
             result.ExpirationMode.Should().Be(baseItem.ExpirationMode);
             result.ExpirationTimeout.Should().Be(baseItem.ExpirationTimeout);
         }
 
         [Fact]
-        public void CacheItem_WithExpiration_None()
+        public void CacheItemValidation_WithExpiration_None()
         {
             // arrange
             var baseItem = new CacheItem<object>("key", "region", "value", ExpirationMode.Sliding, TimeSpan.FromDays(10));
@@ -115,12 +116,12 @@ namespace CacheManager.Tests
             result.Value.Should().Be(baseItem.Value);
             result.Region.Should().Be(baseItem.Region);
             result.Key.Should().Be(baseItem.Key);
-            result.CreatedUtc.Should().Be(baseItem.CreatedUtc);
-            result.LastAccessedUtc.Should().Be(baseItem.LastAccessedUtc);
+            result.CreatedUtc.Should().BeCloseTo(baseItem.CreatedUtc);
+            result.LastAccessedUtc.Should().BeCloseTo(baseItem.LastAccessedUtc);
         }
 
         [Fact]
-        public void CacheItem_WithExpiration_Sliding()
+        public void CacheItemValidation_WithExpiration_Sliding()
         {
             // arrange
             var baseItem = new CacheItem<object>("key", "region", "value", ExpirationMode.Absolute, TimeSpan.FromDays(10));
@@ -134,13 +135,13 @@ namespace CacheManager.Tests
             result.Value.Should().Be(baseItem.Value);
             result.Region.Should().Be(baseItem.Region);
             result.Key.Should().Be(baseItem.Key);
-            result.CreatedUtc.Should().Be(baseItem.CreatedUtc);
-            result.LastAccessedUtc.Should().Be(baseItem.LastAccessedUtc);
+            result.CreatedUtc.Should().BeCloseTo(baseItem.CreatedUtc);
+            result.LastAccessedUtc.Should().BeCloseTo(baseItem.LastAccessedUtc);
         }
 
         [Fact]
         [Trait("category", "Unreliable")]
-        public void CacheItem_WithExpiration_Absolute()
+        public void CacheItemValidation_WithExpiration_Absolute()
         {
             // arrange
             var baseItem = new CacheItem<object>("key", "region", "value", ExpirationMode.Sliding, TimeSpan.FromDays(10));
@@ -154,12 +155,12 @@ namespace CacheManager.Tests
             result.Value.Should().Be(baseItem.Value);
             result.Region.Should().Be(baseItem.Region);
             result.Key.Should().Be(baseItem.Key);
-            result.CreatedUtc.Should().Be(result.CreatedUtc); // !! Changed due to issue #136
-            result.LastAccessedUtc.Should().Be(baseItem.LastAccessedUtc);
+            result.CreatedUtc.Should().BeCloseTo(result.CreatedUtc); // !! Changed due to issue #136
+            result.LastAccessedUtc.Should().BeCloseTo(baseItem.LastAccessedUtc);
         }
 
         [Fact]
-        public void CacheItem_WithNoExpiration()
+        public void CacheItemValidation_WithNoExpiration()
         {
             // arrange
             var baseItem = new CacheItem<object>("key", "region", "value", ExpirationMode.Sliding, TimeSpan.FromDays(10));
@@ -173,12 +174,12 @@ namespace CacheManager.Tests
             result.Value.Should().Be(baseItem.Value);
             result.Region.Should().Be(baseItem.Region);
             result.Key.Should().Be(baseItem.Key);
-            result.CreatedUtc.Should().Be(baseItem.CreatedUtc);
-            result.LastAccessedUtc.Should().Be(baseItem.LastAccessedUtc);
+            result.CreatedUtc.Should().BeCloseTo(baseItem.CreatedUtc);
+            result.LastAccessedUtc.Should().BeCloseTo(baseItem.LastAccessedUtc);
         }
 
         [Fact]
-        public void CacheItem_WithSlidingExpiration()
+        public void CacheItemValidation_WithSlidingExpiration()
         {
             // arrange
             var baseItem = new CacheItem<object>("key", "region", "value", ExpirationMode.Absolute, TimeSpan.FromDays(10));
@@ -192,12 +193,12 @@ namespace CacheManager.Tests
             result.Value.Should().Be(baseItem.Value);
             result.Region.Should().Be(baseItem.Region);
             result.Key.Should().Be(baseItem.Key);
-            result.CreatedUtc.Should().Be(baseItem.CreatedUtc);
-            result.LastAccessedUtc.Should().Be(baseItem.LastAccessedUtc);
+            result.CreatedUtc.Should().BeCloseTo(baseItem.CreatedUtc);
+            result.LastAccessedUtc.Should().BeCloseTo(baseItem.LastAccessedUtc);
         }
 
         [Fact]
-        public void CacheItem_WithValue()
+        public void CacheItemValidation_WithValue()
         {
             // arrange
             var baseItem = new CacheItem<object>("key", "region", "value", ExpirationMode.Absolute, TimeSpan.FromDays(10));
@@ -209,8 +210,8 @@ namespace CacheManager.Tests
             result.Value.Should().Be("new value");
             result.Region.Should().Be(baseItem.Region);
             result.Key.Should().Be(baseItem.Key);
-            result.CreatedUtc.Should().Be(baseItem.CreatedUtc);
-            result.LastAccessedUtc.Should().Be(baseItem.LastAccessedUtc);
+            result.CreatedUtc.Should().BeCloseTo(baseItem.CreatedUtc);
+            result.LastAccessedUtc.Should().BeCloseTo(baseItem.LastAccessedUtc);
             result.ExpirationMode.Should().Be(baseItem.ExpirationMode);
             result.ExpirationTimeout.Should().Be(baseItem.ExpirationTimeout);
         }
@@ -219,7 +220,7 @@ namespace CacheManager.Tests
 
         [Fact]
         [ReplaceCulture]
-        public void CacheItem_Ctor1_EmptyKey()
+        public void CacheItemValidation_Ctor1_EmptyKey()
         {
             // arrange
             var key = string.Empty;
@@ -229,12 +230,12 @@ namespace CacheManager.Tests
             Action act = () => new CacheItem<object>(key, value);
 
             // assert
-            act.ShouldThrow<ArgumentException>().WithMessage("*Parameter name: key");
+            act.Should().Throw<ArgumentException>().WithMessage("*Parameter name: key");
         }
 
         [Fact]
         [ReplaceCulture]
-        public void CacheItem_Ctor1_NullKey()
+        public void CacheItemValidation_Ctor1_NullKey()
         {
             // arrange
             string key = null;
@@ -244,12 +245,12 @@ namespace CacheManager.Tests
             Action act = () => new CacheItem<object>(key, value);
 
             // assert
-            act.ShouldThrow<ArgumentNullException>().WithMessage("*Parameter name: key");
+            act.Should().Throw<ArgumentNullException>().WithMessage("*Parameter name: key");
         }
 
         [Fact]
         [ReplaceCulture]
-        public void CacheItem_Ctor1_WhitespaceKey()
+        public void CacheItemValidation_Ctor1_WhitespaceKey()
         {
             // arrange
             string key = "    ";
@@ -259,12 +260,12 @@ namespace CacheManager.Tests
             Action act = () => new CacheItem<object>(key, value);
 
             // assert
-            act.ShouldThrow<ArgumentException>().WithMessage("*Parameter name: key");
+            act.Should().Throw<ArgumentException>().WithMessage("*Parameter name: key");
         }
 
         [Fact]
         [ReplaceCulture]
-        public void CacheItem_Ctor1_NullValue()
+        public void CacheItemValidation_Ctor1_NullValue()
         {
             // arrange
             string key = "key";
@@ -274,12 +275,12 @@ namespace CacheManager.Tests
             Action act = () => new CacheItem<object>(key, value);
 
             // assert
-            act.ShouldThrow<ArgumentException>().WithMessage("*cannot be null.\r\nParameter name: value");
+            act.Should().Throw<ArgumentException>().WithMessage("*cannot be null.\r\nParameter name: value");
         }
 
         [Fact]
         [ReplaceCulture]
-        public void CacheItem_Ctor1_ValidateCreatedResult()
+        public void CacheItemValidation_Ctor1_ValidateCreatedResult()
         {
             // arrange
             string key = "key";
@@ -303,7 +304,7 @@ namespace CacheManager.Tests
 
         [Fact]
         [ReplaceCulture]
-        public void CacheItem_Ctor2_EmptyKey()
+        public void CacheItemValidation_Ctor2_EmptyKey()
         {
             // arrange
             var key = string.Empty;
@@ -314,12 +315,12 @@ namespace CacheManager.Tests
             Action act = () => new CacheItem<object>(key, region, value);
 
             // assert
-            act.ShouldThrow<ArgumentException>().WithMessage("*Parameter name: key");
+            act.Should().Throw<ArgumentException>().WithMessage("*Parameter name: key");
         }
 
         [Fact]
         [ReplaceCulture]
-        public void CacheItem_Ctor2_NullKey()
+        public void CacheItemValidation_Ctor2_NullKey()
         {
             // arrange
             string key = null;
@@ -330,12 +331,12 @@ namespace CacheManager.Tests
             Action act = () => new CacheItem<object>(key, region, value);
 
             // assert
-            act.ShouldThrow<ArgumentNullException>().WithMessage("*Parameter name: key");
+            act.Should().Throw<ArgumentNullException>().WithMessage("*Parameter name: key");
         }
 
         [Fact]
         [ReplaceCulture]
-        public void CacheItem_Ctor2_WhitespaceKey()
+        public void CacheItemValidation_Ctor2_WhitespaceKey()
         {
             // arrange
             string key = "    ";
@@ -346,12 +347,12 @@ namespace CacheManager.Tests
             Action act = () => new CacheItem<object>(key, region, value);
 
             // assert
-            act.ShouldThrow<ArgumentException>().WithMessage("*Parameter name: key");
+            act.Should().Throw<ArgumentException>().WithMessage("*Parameter name: key");
         }
 
         [Fact]
         [ReplaceCulture]
-        public void CacheItem_Ctor2_NullValue()
+        public void CacheItemValidation_Ctor2_NullValue()
         {
             // arrange
             string key = "key";
@@ -362,12 +363,12 @@ namespace CacheManager.Tests
             Action act = () => new CacheItem<object>(key, region, value);
 
             // assert
-            act.ShouldThrow<ArgumentException>().WithMessage("*cannot be null.\r\nParameter name: value");
+            act.Should().Throw<ArgumentException>().WithMessage("*cannot be null.\r\nParameter name: value");
         }
 
         [Fact]
         [ReplaceCulture]
-        public void CacheItem_Ctor2_EmptyRegion()
+        public void CacheItemValidation_Ctor2_EmptyRegion()
         {
             // arrange
             string key = "key";
@@ -378,13 +379,13 @@ namespace CacheManager.Tests
             Action act = () => new CacheItem<object>(key, region, value);
 
             // assert
-            act.ShouldThrow<ArgumentException>()
+            act.Should().Throw<ArgumentException>()
                 .WithMessage("*Parameter name: region");
         }
 
         [Fact]
         [ReplaceCulture]
-        public void CacheItem_Ctor2_NullRegion()
+        public void CacheItemValidation_Ctor2_NullRegion()
         {
             // arrange
             string key = "key";
@@ -395,13 +396,13 @@ namespace CacheManager.Tests
             Action act = () => new CacheItem<object>(key, region, value);
 
             // assert
-            act.ShouldThrow<ArgumentNullException>()
+            act.Should().Throw<ArgumentNullException>()
                 .WithMessage("*Parameter name: region");
         }
 
         [Fact]
         [ReplaceCulture]
-        public void CacheItem_Ctor2_WhitespaceRegion()
+        public void CacheItemValidation_Ctor2_WhitespaceRegion()
         {
             // arrange
             string key = "key";
@@ -412,13 +413,13 @@ namespace CacheManager.Tests
             Action act = () => new CacheItem<object>(key, region, value);
 
             // assert
-            act.ShouldThrow<ArgumentException>()
+            act.Should().Throw<ArgumentException>()
                 .WithMessage("*Parameter name: region");
         }
 
         [Fact]
         [ReplaceCulture]
-        public void CacheItem_Ctor2_ValidateCreatedResult()
+        public void CacheItemValidation_Ctor2_ValidateCreatedResult()
         {
             // arrange
             string key = "key";
@@ -443,7 +444,7 @@ namespace CacheManager.Tests
 
         [Fact]
         [ReplaceCulture]
-        public void CacheItem_Ctor3_EmptyKey()
+        public void CacheItemValidation_Ctor3_EmptyKey()
         {
             // arrange
             var key = string.Empty;
@@ -455,12 +456,12 @@ namespace CacheManager.Tests
             Action act = () => new CacheItem<object>(key, value, mode, timeout);
 
             // assert
-            act.ShouldThrow<ArgumentException>().WithMessage("*Parameter name: key");
+            act.Should().Throw<ArgumentException>().WithMessage("*Parameter name: key");
         }
 
         [Fact]
         [ReplaceCulture]
-        public void CacheItem_Ctor3_NullKey()
+        public void CacheItemValidation_Ctor3_NullKey()
         {
             // arrange
             string key = null;
@@ -472,12 +473,12 @@ namespace CacheManager.Tests
             Action act = () => new CacheItem<object>(key, value, mode, timeout);
 
             // assert
-            act.ShouldThrow<ArgumentException>().WithMessage("*cannot be null.\r\nParameter name: key");
+            act.Should().Throw<ArgumentException>().WithMessage("*cannot be null.\r\nParameter name: key");
         }
 
         [Fact]
         [ReplaceCulture]
-        public void CacheItem_Ctor3_WhitespaceKey()
+        public void CacheItemValidation_Ctor3_WhitespaceKey()
         {
             // arrange
             string key = "    ";
@@ -489,12 +490,12 @@ namespace CacheManager.Tests
             Action act = () => new CacheItem<object>(key, value, mode, timeout);
 
             // assert
-            act.ShouldThrow<ArgumentException>().WithMessage("*Parameter name: key");
+            act.Should().Throw<ArgumentException>().WithMessage("*Parameter name: key");
         }
 
         [Fact]
         [ReplaceCulture]
-        public void CacheItem_Ctor3_NullValue()
+        public void CacheItemValidation_Ctor3_NullValue()
         {
             // arrange
             string key = "key";
@@ -506,12 +507,12 @@ namespace CacheManager.Tests
             Action act = () => new CacheItem<object>(key, value, mode, timeout);
 
             // assert
-            act.ShouldThrow<ArgumentException>().WithMessage("*cannot be null.\r\nParameter name: value");
+            act.Should().Throw<ArgumentException>().WithMessage("*cannot be null.\r\nParameter name: value");
         }
 
         [Fact]
         [ReplaceCulture]
-        public void CacheItem_Ctor3_ValidateCreatedResult()
+        public void CacheItemValidation_Ctor3_ValidateCreatedResult()
         {
             // arrange
             string key = "key";
@@ -537,7 +538,7 @@ namespace CacheManager.Tests
 
         [Fact]
         [ReplaceCulture]
-        public void CacheItem_Ctor4_EmptyKey()
+        public void CacheItemValidation_Ctor4_EmptyKey()
         {
             // arrange
             var key = string.Empty;
@@ -550,12 +551,12 @@ namespace CacheManager.Tests
             Action act = () => new CacheItem<object>(key, region, value, mode, timeout);
 
             // assert
-            act.ShouldThrow<ArgumentException>().WithMessage("*Parameter name: key");
+            act.Should().Throw<ArgumentException>().WithMessage("*Parameter name: key");
         }
 
         [Fact]
         [ReplaceCulture]
-        public void CacheItem_Ctor4_NullKey()
+        public void CacheItemValidation_Ctor4_NullKey()
         {
             // arrange
             string key = null;
@@ -568,12 +569,12 @@ namespace CacheManager.Tests
             Action act = () => new CacheItem<object>(key, region, value, mode, timeout);
 
             // assert
-            act.ShouldThrow<ArgumentNullException>().WithMessage("*Parameter name: key");
+            act.Should().Throw<ArgumentNullException>().WithMessage("*Parameter name: key");
         }
 
         [Fact]
         [ReplaceCulture]
-        public void CacheItem_Ctor4_WhitespaceKey()
+        public void CacheItemValidation_Ctor4_WhitespaceKey()
         {
             // arrange
             string key = "    ";
@@ -586,12 +587,12 @@ namespace CacheManager.Tests
             Action act = () => new CacheItem<object>(key, region, value, mode, timeout);
 
             // assert
-            act.ShouldThrow<ArgumentException>().WithMessage("*Parameter name: key");
+            act.Should().Throw<ArgumentException>().WithMessage("*Parameter name: key");
         }
 
         [Fact]
         [ReplaceCulture]
-        public void CacheItem_Ctor4_NullValue()
+        public void CacheItemValidation_Ctor4_NullValue()
         {
             // arrange
             string key = "key";
@@ -604,12 +605,12 @@ namespace CacheManager.Tests
             Action act = () => new CacheItem<object>(key, region, value, mode, timeout);
 
             // assert
-            act.ShouldThrow<ArgumentNullException>().WithMessage("*Parameter name: value");
+            act.Should().Throw<ArgumentNullException>().WithMessage("*Parameter name: value");
         }
 
         [Fact]
         [ReplaceCulture]
-        public void CacheItem_Ctor4_EmptyRegion()
+        public void CacheItemValidation_Ctor4_EmptyRegion()
         {
             // arrange
             string key = "key";
@@ -622,13 +623,13 @@ namespace CacheManager.Tests
             Action act = () => new CacheItem<object>(key, region, value, mode, timeout);
 
             // assert
-            act.ShouldThrow<ArgumentException>()
+            act.Should().Throw<ArgumentException>()
                 .WithMessage("*Parameter name: region");
         }
 
         [Fact]
         [ReplaceCulture]
-        public void CacheItem_Ctor4_NullRegion()
+        public void CacheItemValidation_Ctor4_NullRegion()
         {
             // arrange
             string key = "key";
@@ -641,13 +642,13 @@ namespace CacheManager.Tests
             Action act = () => new CacheItem<object>(key, region, value, mode, timeout);
 
             // assert
-            act.ShouldThrow<ArgumentNullException>()
+            act.Should().Throw<ArgumentNullException>()
                 .WithMessage("*Parameter name: region");
         }
 
         [Fact]
         [ReplaceCulture]
-        public void CacheItem_Ctor4_WhitespaceRegion()
+        public void CacheItemValidation_Ctor4_WhitespaceRegion()
         {
             // arrange
             string key = "key";
@@ -660,13 +661,13 @@ namespace CacheManager.Tests
             Action act = () => new CacheItem<object>(key, region, value, mode, timeout);
 
             // assert
-            act.ShouldThrow<ArgumentException>()
+            act.Should().Throw<ArgumentException>()
                 .WithMessage("*Parameter name: region");
         }
 
         [Fact]
         [ReplaceCulture]
-        public void CacheItem_Ctor4_ValidateCreatedResult()
+        public void CacheItemValidation_Ctor4_ValidateCreatedResult()
         {
             // arrange
             string key = "key";
@@ -691,7 +692,7 @@ namespace CacheManager.Tests
 
         [Fact]
         [ReplaceCulture]
-        public void CacheItem_Ctor_ExpirationTimeoutDefaults()
+        public void CacheItemValidation_Ctor_ExpirationTimeoutDefaults()
         {
             // arrange
             string key = "key";
