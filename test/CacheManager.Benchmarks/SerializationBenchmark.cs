@@ -1,23 +1,17 @@
 ﻿using System;
-using System.Buffers;
 using System.Collections.Generic;
-using System.IO;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
-using System.Text;
 using BenchmarkDotNet.Attributes;
-using BenchmarkDotNet.Configs;
-using BenchmarkDotNet.Environments;
-using BenchmarkDotNet.Jobs;
 using CacheManager.Core;
 using CacheManager.Core.Internal;
 using CacheManager.Serialization.Bond;
 using CacheManager.Serialization.Json;
 using CacheManager.Serialization.ProtoBuf;
-using Microsoft.Extensions.ObjectPool;
-using Newtonsoft.Json;
 
 namespace CacheManager.Benchmarks
 {
+    [ExcludeFromCodeCoverage]
     public class SerializationBenchmark
     {
         private int _iterations = 1000;
@@ -31,7 +25,7 @@ namespace CacheManager.Benchmarks
         private BondSimpleJsonCacheSerializer _bondSimpleJson = new BondSimpleJsonCacheSerializer();
         private readonly Type _pocoType = typeof(TestPoco);
 
-        [Setup]
+        [GlobalSetup]
         public void Setup()
         {
             var rnd = new Random();
