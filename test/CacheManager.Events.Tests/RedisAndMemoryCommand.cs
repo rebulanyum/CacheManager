@@ -2,7 +2,7 @@
 using System.Threading.Tasks;
 using CacheManager.Core;
 using CacheManager.Core.Internal;
-using Microsoft.Extensions.CommandLineUtils;
+using McMaster.Extensions.CommandLineUtils;
 using Microsoft.Extensions.Logging;
 using StackExchange.Redis;
 
@@ -93,7 +93,7 @@ namespace CacheManager.Events.Tests
 
                         cacheA.TryUpdate(key, (oldVal) => oldVal + 1, out int? newValue);
 
-                        _multiplexer.GetDatabase(0).KeyDelete(key, CommandFlags.HighPriority);
+                        _multiplexer.GetDatabase(0).KeyDelete(key);
 
                         await Task.Delay(0);
                     });

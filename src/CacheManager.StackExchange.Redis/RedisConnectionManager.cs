@@ -23,6 +23,7 @@ namespace CacheManager.Redis
         {
             NotNull(configuration, nameof(configuration));
             NotNull(loggerFactory, nameof(loggerFactory));
+            NotNullOrWhiteSpace(configuration.ConnectionString, nameof(RedisConfiguration.ConnectionString));
 
             _configuration = configuration;
             _connectionString = configuration.ConnectionString;
@@ -175,7 +176,6 @@ namespace CacheManager.Redis
                             }
                         }
 
-                        connection.PreserveAsyncOrder = false;
                         _connections.Add(_connectionString, connection);
                     }
                 }

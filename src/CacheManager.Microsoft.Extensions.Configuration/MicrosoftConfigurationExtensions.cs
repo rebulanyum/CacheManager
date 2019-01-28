@@ -461,12 +461,15 @@ namespace Microsoft.Extensions.Configuration
             {
                 switch (knownTypeName.ToLowerInvariant())
                 {
+#if !NET461
                     case KnonwSerializerBinary:
-#if NETSTANDARD
                         throw new PlatformNotSupportedException("BinaryCacheSerializer is not available on this platform");
 #else
+                    case KnonwSerializerBinary:
                         return typeof(BinaryCacheSerializer);
+
 #endif
+
                     case KnonwSerializerJson:
                         return Type.GetType(TypeJsonCacheSerializer, true);
 
