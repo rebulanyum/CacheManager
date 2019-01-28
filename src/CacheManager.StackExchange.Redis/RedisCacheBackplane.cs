@@ -31,6 +31,7 @@ namespace CacheManager.Redis
         private readonly byte[] _identifier;
         private readonly ILogger _logger;
         private readonly RedisConnectionManager _connection;
+        private readonly Timer _timer;
         private HashSet<BackplaneMessage> _messages = new HashSet<BackplaneMessage>();
         private object _messageLock = new object();
         private int _skippedMessages = 0;
@@ -58,6 +59,10 @@ namespace CacheManager.Redis
                 loggerFactory);
 
             RetryHelper.Retry(() => Subscribe(), configuration.RetryTimeout, configuration.MaxRetries, _logger);
+
+            // adding additional timer based send message invoke (shouldn't do anything if there are no messages,
+            // but in really rare race conditions, it might happen messages do not get send if SendMEssages only get invoked through "NotifyXyz"
+            _timer = new Timer(SendMessages, true, 1000, 1000);
         }
 
         /// <summary>
@@ -132,6 +137,7 @@ namespace CacheManager.Redis
                 {
                     _source.Cancel();
                     _connection.Subscriber.Unsubscribe(_channelName);
+                    _timer.Dispose();
                 }
                 catch
                 {
@@ -165,12 +171,12 @@ namespace CacheManager.Redis
                     }
                 }
 
-                SendMessages();
+                SendMessages(null);
             }
         }
 
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes", Justification = "No other way")]
-        private void SendMessages()
+        private void SendMessages(object state)
         {
             if (_sending || _messages == null || _messages.Count == 0)
             {
@@ -186,6 +192,10 @@ namespace CacheManager.Redis
                     }
 
                     _sending = true;
+                    if (state != null && state is bool boolState && boolState == true)
+                    {
+                        _logger.LogInfo($"Backplane is sending {_messages.Count} messages triggered by timer.");
+                    }
 #if !NET40
                     await Task.Delay(10).ConfigureAwait(false);
 #endif
@@ -244,57 +254,64 @@ namespace CacheManager.Redis
                 _channelName,
                 (channel, msg) =>
                 {
-                    var messages = BackplaneMessage.Deserialize(msg, _identifier);
-
-                    if (!messages.Any())
+                    try
                     {
-                        // no messages for this instance
-                        return;
-                    }
+                        var messages = BackplaneMessage.Deserialize(msg, _identifier);
 
-                    // now deserialize all of them (lazy enumerable)
-                    var fullMessages = messages.ToArray();
-                    Interlocked.Add(ref MessagesReceived, fullMessages.Length);
-
-                    if (_logger.IsEnabled(LogLevel.Information))
-                    {
-                        _logger.LogInfo("Backplane got notified with {0} new messages.", fullMessages.Length);
-                    }
-
-                    foreach (var message in fullMessages)
-                    {
-                        switch (message.Action)
+                        if (!messages.Any())
                         {
-                            case BackplaneAction.Clear:
-                                TriggerCleared();
-                                break;
-
-                            case BackplaneAction.ClearRegion:
-                                TriggerClearedRegion(message.Region);
-                                break;
-
-                            case BackplaneAction.Changed:
-                                if (string.IsNullOrWhiteSpace(message.Region))
-                                {
-                                    TriggerChanged(message.Key, message.ChangeAction);
-                                }
-                                else
-                                {
-                                    TriggerChanged(message.Key, message.Region, message.ChangeAction);
-                                }
-                                break;
-
-                            case BackplaneAction.Removed:
-                                if (string.IsNullOrWhiteSpace(message.Region))
-                                {
-                                    TriggerRemoved(message.Key);
-                                }
-                                else
-                                {
-                                    TriggerRemoved(message.Key, message.Region);
-                                }
-                                break;
+                            // no messages for this instance
+                            return;
                         }
+
+                        // now deserialize all of them (lazy enumerable)
+                        var fullMessages = messages.ToArray();
+                        Interlocked.Add(ref MessagesReceived, fullMessages.Length);
+
+                        if (_logger.IsEnabled(LogLevel.Information))
+                        {
+                            _logger.LogInfo("Backplane got notified with {0} new messages.", fullMessages.Length);
+                        }
+
+                        foreach (var message in fullMessages)
+                        {
+                            switch (message.Action)
+                            {
+                                case BackplaneAction.Clear:
+                                    TriggerCleared();
+                                    break;
+
+                                case BackplaneAction.ClearRegion:
+                                    TriggerClearedRegion(message.Region);
+                                    break;
+
+                                case BackplaneAction.Changed:
+                                    if (string.IsNullOrWhiteSpace(message.Region))
+                                    {
+                                        TriggerChanged(message.Key, message.ChangeAction);
+                                    }
+                                    else
+                                    {
+                                        TriggerChanged(message.Key, message.Region, message.ChangeAction);
+                                    }
+                                    break;
+
+                                case BackplaneAction.Removed:
+                                    if (string.IsNullOrWhiteSpace(message.Region))
+                                    {
+                                        TriggerRemoved(message.Key);
+                                    }
+                                    else
+                                    {
+                                        TriggerRemoved(message.Key, message.Region);
+                                    }
+                                    break;
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogWarn(ex, "Error reading backplane message(s)");
                     }
                 },
                 CommandFlags.FireAndForget);
